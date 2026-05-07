@@ -26,6 +26,7 @@
 import { RAW_OBSERVED_LABELS } from '../src/mockAtsPayload.js';
 
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+const ANTHROPIC_VERSION = '2023-06-01';
 
 const SYSTEM_PROMPT = `You are a data quality reviewer for an Applicant Tracking System.
 
@@ -64,10 +65,21 @@ async function detectNearDuplicates(labels: string[]): Promise<void> {
 
   const labelList = labels.map((l, i) => `${i + 1}. "${l}"`).join('\n');
 
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    console.warn('[detect-dupes] ANTHROPIC_API_KEY is not configured. Skipping advisory review.');
+    return;
+  }
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+      },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 1024,

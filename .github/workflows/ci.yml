@@ -76,29 +76,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: verify
     continue-on-error: true
-    env:
-      # GitHub Actions does not allow secrets to be referenced directly in job
-      # `if` expressions, so the detector command itself is gated by this env.
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         with:
           node-version: "20"
           cache: npm
 
       - name: Install dependencies
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: npm ci
 
       - name: Run AI advisory duplicate detector
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: npm run detect-dupes
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
