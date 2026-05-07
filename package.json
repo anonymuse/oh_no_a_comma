@@ -1,0 +1,32 @@
+{
+  "name": "ats-location-canonicalization",
+  "version": "1.0.0",
+  "description": "Portfolio case study: location string normalization defect in a public ATS careers page",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "validate": "vitest run tests/fixtureValidation.test.ts",
+    "audit": "tsx scripts/auditLocations.ts",
+    "detect-dupes": "tsx scripts/detectNearDuplicateLabels.ts",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "portfolio",
+    "data-quality",
+    "normalization",
+    "ats",
+    "typescript"
+  ],
+  "author": "Jesse White",
+  "license": "MIT"
+}
