@@ -59,6 +59,14 @@ RECOMMENDATION:
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function detectNearDuplicates(labels: string[]): Promise<void> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    console.log('\n[detect-dupes] ANTHROPIC_API_KEY is not set. Skipping advisory review.');
+    console.log('[detect-dupes] NOTE: This is expected for local runs and unconfigured CI.\n');
+    return;
+  }
+
   console.log('\n[detect-dupes] Sending label set to Claude for anomaly review...');
   console.log('[detect-dupes] NOTE: This is a non-blocking review. Results are advisory only.\n');
 
@@ -67,7 +75,11 @@ async function detectNearDuplicates(labels: string[]): Promise<void> {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 1024,

@@ -173,7 +173,7 @@ gate the build. Deterministic checks gate the build.
 npm install
 npm test                    # Vitest unit tests with coverage
 npm run validate            # Fixture validation — fails on duplicate canonical labels
-npm run audit               # Fetch public job data and report normalization deltas
+npm run audit               # Attempt public job-data fetch; report normalization deltas
 npm run detect-dupes        # AI-assisted near-duplicate label detector (non-blocking)
 npm run typecheck           # tsc --noEmit
 ```
@@ -203,12 +203,11 @@ ats-location-canonicalization/
     dedupeLocations.test.ts    Dedup and filter tests
     fixtureValidation.test.ts  CI guard: asserts no duplicate canonical labels
   scripts/
-    auditLocations.ts          Fetch public job data; report normalization delta
+    auditLocations.ts          Attempt public fetch; report normalization delta
     detectNearDuplicateLabels.ts  AI-assisted near-duplicate detector (non-blocking)
   docs/
     forensic-notes.md          Detailed DevTools investigation playbook
     ai-usage.md                GenAI governance rationale for this project
-    postmortem-notes.md        Extended post-mortem working notes
   .github/
     workflows/
       ci.yml                   TypeScript check + tests + fixture validation

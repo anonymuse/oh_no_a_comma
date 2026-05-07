@@ -56,8 +56,9 @@ export const RAW_OBSERVED_LABELS: string[] = [
 
 /**
  * Expected canonical labels after normalization.
- * The 11 raw strings above should collapse to 9 unique canonical entries
- * (New York variants deduplicate, Seattle hybrid variants deduplicate).
+ * The 16 raw strings above should collapse to 13 unique canonical entries
+ * (office New York variants deduplicate; New York and Seattle hybrid variants
+ * deduplicate).
  */
 export const EXPECTED_CANONICAL_LABELS: string[] = [
   'Austin, TX',

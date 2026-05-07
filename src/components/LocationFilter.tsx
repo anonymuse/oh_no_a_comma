@@ -3,6 +3,10 @@
  *
  * Drop-in React component and headless hook for a normalized location filter.
  *
+ * This component is illustrative rather than a bundled runnable app. It expects
+ * the host application to provide the React runtime; this repository keeps only
+ * React type definitions as dev dependencies for TypeScript validation.
+ *
  * The key behavioral difference from a naive implementation:
  *
  *   BEFORE (buggy):
