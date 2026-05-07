@@ -1,7 +1,7 @@
 /**
  * auditLocations.ts
  *
- * Fetches public job listing data and reports normalization delta.
+ * Attempts to fetch public job listing data and reports normalization delta.
  *
  * Run: npm run audit
  *
@@ -67,7 +67,7 @@ async function fetchPublicJobLocations(): Promise<string[]> {
 
 function renderReport(locations: string[], source: 'live' | 'fixture'): void {
   const report = buildAuditReport(locations);
-  const sourceLabel = source === 'live' ? 'live public API' : 'synthetic fixtures';
+  const sourceLabel = source === 'live' ? 'public fetch attempt' : 'synthetic fixtures';
 
   console.log('\n');
   console.log('═══════════════════════════════════════════════════════');

@@ -47,17 +47,18 @@ The following are the most plausible explanations based on public observation.
 They are not mutually exclusive.
 
 **Hypothesis A — Freeform string storage**  
-The `location` field on ATS job records is a free-text string. Recruiters
-enter it manually with no normalization on save. Minor typographic differences
-(space before comma, full vs. abbreviated state) persist in the data store and
-surface verbatim in the careers page API response.
+Under this hypothesis, a `location` field on ATS job records behaves like a
+free-text string. Recruiters or upstream systems may enter values with no
+normalization on save. Minor typographic differences (space before comma, full
+vs. abbreviated state) could then persist and surface verbatim in the careers
+page response.
 
 **Hypothesis B — Composed label with inconsistent structured fields**  
-The ATS stores location as structured fields (`city`, `region`, `country`,
-`workplaceType`) and composes a display label at render time. The `region`
-field has inconsistent values across records (`"New York"` vs `"NY"` vs
-`"Washington"` vs `"WA"`), and the label composer does not normalize before
-joining.
+Under this hypothesis, the ATS stores location-like data as structured fields
+(`city`, `region`, `country`, `workplaceType`) and composes a display label at
+render time. The inferred `region`-like value may vary across records
+(`"New York"` vs `"NY"` vs `"Washington"` vs `"WA"`), and the label composer
+may not normalize before joining.
 
 Both hypotheses point to the same gap: **no canonical location key is used
 at the deduplication or filter-matching step**. The fix for both is equivalent
