@@ -1,5 +1,7 @@
 # ATS Location Canonicalization — Case Study
 
+[![CI](https://github.com/anonymuse/oh_no_a_comma/actions/workflows/ci.yml/badge.svg)](https://github.com/anonymuse/oh_no_a_comma/actions/workflows/ci.yml)
+
 A portfolio case study on identifying, reproducing, and preventing a class of
 data-normalization defect visible in a public careers experience.
 
