@@ -86,16 +86,49 @@ export function normalizeRegion(region: string): string {
 }
 
 /**
- * Replace full US state names with 2-letter abbreviations within a
- * location string. Operates on whole-word matches to avoid partial
- * substitutions (e.g. "New" inside "New Hampshire").
+ * Normalize region tokens in comma-delimited location labels.
+ *
+ * The state-name alias pass must be field-aware: `New York` can be a city or
+ * a region. Replacing state names globally would turn `New York, NY` into
+ * `NY, NY`, so this pass only canonicalizes the region slot in the two shapes
+ * this project models:
+ *   - `City, Region`
+ *   - `Work type (City, Region, Country)`
  */
 function normalizeRegionsInString(str: string): string {
-  let result = str;
-  for (const [name, abbrev] of REGION_ENTRIES) {
-    result = result.replace(new RegExp(`\\b${name}\\b`, 'gi'), abbrev);
+  const parenthesizedLocation = str.match(/^(?<prefix>[^()]+\()(?<body>[^()]+)(?<suffix>\))$/);
+
+  if (parenthesizedLocation?.groups) {
+    const { prefix, body, suffix } = parenthesizedLocation.groups;
+    return `${prefix}${normalizeDelimitedLocation(body)}${suffix}`;
   }
-  return result;
+
+  return normalizeDelimitedLocation(str);
+}
+
+function normalizeDelimitedLocation(location: string): string {
+  const parts = location.split(',').map((part) => part.trim());
+
+  if (parts.length < 2) {
+    return location;
+  }
+
+  const [city, region, country] = parts;
+  const normalizedParts = [normalizeCityName(city), normalizeRegion(region)];
+
+  if (country !== undefined) {
+    normalizedParts.push(country.length === 2 ? country.toUpperCase() : country);
+  }
+
+  return normalizedParts.join(', ');
+}
+
+function normalizeCityName(city: string): string {
+  if (city !== city.toLowerCase()) {
+    return city;
+  }
+
+  return city.replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
 }
 
 // ─── Pass 3: work type prefix ─────────────────────────────────────────────────

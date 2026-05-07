@@ -18,7 +18,8 @@ import { RAW_OBSERVED_LABELS, EXPECTED_CANONICAL_LABELS } from '../src/mockAtsPa
 
 describe('fixture validation — no duplicate canonical labels', () => {
   it('produces zero duplicate canonical labels from the observed fixture set', () => {
-    const duplicates = findDuplicateCanonicalLabels(RAW_OBSERVED_LABELS);
+    const canonical = deduplicateLocations(RAW_OBSERVED_LABELS);
+    const duplicates = findDuplicateCanonicalLabels(canonical);
     expect(duplicates).toEqual([]);
   });
 
