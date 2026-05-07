@@ -42,11 +42,6 @@ const REGION_ALIASES: Record<string, string> = {
   Wisconsin: 'WI', Wyoming: 'WY', 'District of Columbia': 'DC',
 };
 
-/** Entries sorted longest-first for safe regex replacement ordering. */
-const REGION_ENTRIES = Object.entries(REGION_ALIASES).sort(
-  ([a], [b]) => b.length - a.length,
-);
-
 // ─── Pass 1: punctuation ─────────────────────────────────────────────────────
 
 /**
@@ -86,16 +81,47 @@ export function normalizeRegion(region: string): string {
 }
 
 /**
- * Replace full US state names with 2-letter abbreviations within a
- * location string. Operates on whole-word matches to avoid partial
- * substitutions (e.g. "New" inside "New Hampshire").
+ * Title-case obviously lowercased city/country components without rewriting
+ * already-mixed-case labels. This keeps the normalizer conservative while
+ * still making heavily malformed fixture strings readable.
  */
-function normalizeRegionsInString(str: string): string {
-  let result = str;
-  for (const [name, abbrev] of REGION_ENTRIES) {
-    result = result.replace(new RegExp(`\\b${name}\\b`, 'gi'), abbrev);
+function normalizeLocationComponent(component: string): string {
+  const trimmed = component.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed === trimmed.toLowerCase()) {
+    return trimmed.replace(/\b[a-z]/g, (char) => char.toUpperCase());
   }
-  return result;
+  return trimmed;
+}
+
+function normalizeCountryComponent(component: string): string {
+  const normalized = normalizeLocationComponent(component);
+  return normalized.length === 2 ? normalized.toUpperCase() : normalized;
+}
+
+/**
+ * Normalize only comma-delimited region positions, not every occurrence of a
+ * state name. This preserves city names such as "New York" while still
+ * canonicalizing region values like "New York" or "Washington".
+ */
+function normalizeRegionPositions(str: string): string {
+  const workTypeMatch = /^(?<prefix>[A-Za-z][A-Za-z\s-]*)\((?<inner>.*)\)$/.exec(str);
+
+  if (workTypeMatch?.groups) {
+    return `${workTypeMatch.groups.prefix}(${normalizeRegionPositions(workTypeMatch.groups.inner)})`;
+  }
+
+  const parts = str.split(',').map((part) => part.trim());
+  if (parts.length < 2) return normalizeLocationComponent(str);
+
+  const [city, region, ...rest] = parts;
+  const normalizedParts = [
+    normalizeLocationComponent(city),
+    normalizeRegion(region),
+    ...rest.map(normalizeCountryComponent),
+  ];
+
+  return normalizedParts.join(', ');
 }
 
 // ─── Pass 3: work type prefix ─────────────────────────────────────────────────
@@ -139,7 +165,7 @@ function normalizeWorkTypePrefix(str: string): string {
 export function normalizeLocation(raw: string | null | undefined): string | null | undefined {
   if (raw == null || typeof raw !== 'string') return raw;
   const step1 = normalizePunctuation(raw);
-  const step2 = normalizeRegionsInString(step1);
+  const step2 = normalizeRegionPositions(step1);
   const step3 = normalizeWorkTypePrefix(step2);
   return step3;
 }

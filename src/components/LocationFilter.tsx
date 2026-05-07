@@ -13,6 +13,10 @@
  *     const options = deduplicateLocations(jobs.map(j => j.location));
  *     // Both variants collapse to one canonical "New York, NY" entry.
  *     // Selecting it matches jobs filed under either raw string.
+ *
+ * Note: this component is illustrative rather than a packaged runnable React
+ * app. React is expected as a host application's peer dependency; this repo
+ * keeps only @types/react in devDependencies for typechecking the example.
  */
 
 import { useMemo, useState, useCallback } from 'react';
