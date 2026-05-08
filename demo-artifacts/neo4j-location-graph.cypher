@@ -1,0 +1,56 @@
+// Synthetic locality-normalization graph generated from src/lib/location/fixtures.ts
+MATCH (n) DETACH DELETE n;
+
+CREATE (job_job_001:JobAd {id: 'job-001', team: 'Platform Enablement', title: 'Platform Reliability Lead'});
+CREATE (job_job_002:JobAd {id: 'job-002', team: 'Platform Enablement', title: 'Internal Developer Experience Manager'});
+CREATE (job_job_003:JobAd {id: 'job-003', team: 'Delivery Infrastructure', title: 'Release Systems Principal'});
+CREATE (job_job_004:JobAd {id: 'job-004', team: 'Operations Tooling', title: 'Workflow Configuration Analyst'});
+CREATE (job_job_005:JobAd {id: 'job-005', team: 'Candidate Experience', title: 'Frontend Platform Engineer'});
+CREATE (job_job_006:JobAd {id: 'job-006', team: 'Candidate Experience', title: 'Design Systems Engineer'});
+CREATE (job_job_007:JobAd {id: 'job-007', team: 'Insights Platform', title: 'Data Quality Engineer'});
+CREATE (job_job_008:JobAd {id: 'job-008', team: 'Insights Platform', title: 'Integration Test Engineer'});
+CREATE (job_job_009:JobAd {id: 'job-009', team: 'Implementation Platform', title: 'Customer Configuration Specialist'});
+CREATE (job_job_010:JobAd {id: 'job-010', team: 'Implementation Platform', title: 'Enterprise Migration Engineer'});
+CREATE (raw_New_York__NY:RawLocation {jobCount: 3, value: 'New York, NY'});
+CREATE (raw_New_York___NY:RawLocation {jobCount: 1, value: 'New York , NY'});
+CREATE (raw_Hybrid__New_York__New_York__US_:RawLocation {jobCount: 1, value: 'Hybrid (New York, New York, US)'});
+CREATE (raw_Hybrid__New_York__NY__US_:RawLocation {jobCount: 1, value: 'Hybrid (New York, NY, US)'});
+CREATE (raw_San_Francisco__California:RawLocation {jobCount: 1, value: 'San Francisco, California'});
+CREATE (raw_San_Francisco__CA:RawLocation {jobCount: 1, value: 'San Francisco, CA'});
+CREATE (raw_Seattle__Washington:RawLocation {jobCount: 1, value: 'Seattle, Washington'});
+CREATE (raw_Seattle__WA:RawLocation {jobCount: 1, value: 'Seattle, WA'});
+CREATE (canonical_new_york_ny:CanonicalLocation {jobCount: 4, key: 'new-york-ny', label: 'New York, NY'});
+CREATE (canonical_hybrid_new_york_ny_us:CanonicalLocation {jobCount: 2, key: 'hybrid-new-york-ny-us', label: 'Hybrid (New York, NY, US)'});
+CREATE (canonical_san_francisco_ca:CanonicalLocation {jobCount: 2, key: 'san-francisco-ca', label: 'San Francisco, CA'});
+CREATE (canonical_seattle_wa:CanonicalLocation {jobCount: 2, key: 'seattle-wa', label: 'Seattle, WA'});
+
+CREATE (job_job_001)-[:HAS_RAW_LOCATION]->(raw_New_York__NY);
+CREATE (job_job_001)-[:HAS_CANONICAL_LOCATION]->(canonical_new_york_ny);
+CREATE (job_job_002)-[:HAS_RAW_LOCATION]->(raw_New_York__NY);
+CREATE (job_job_002)-[:HAS_CANONICAL_LOCATION]->(canonical_new_york_ny);
+CREATE (job_job_003)-[:HAS_RAW_LOCATION]->(raw_New_York__NY);
+CREATE (job_job_003)-[:HAS_CANONICAL_LOCATION]->(canonical_new_york_ny);
+CREATE (job_job_004)-[:HAS_RAW_LOCATION]->(raw_New_York___NY);
+CREATE (job_job_004)-[:HAS_CANONICAL_LOCATION]->(canonical_new_york_ny);
+CREATE (job_job_005)-[:HAS_RAW_LOCATION]->(raw_Hybrid__New_York__New_York__US_);
+CREATE (job_job_005)-[:HAS_CANONICAL_LOCATION]->(canonical_hybrid_new_york_ny_us);
+CREATE (job_job_006)-[:HAS_RAW_LOCATION]->(raw_Hybrid__New_York__NY__US_);
+CREATE (job_job_006)-[:HAS_CANONICAL_LOCATION]->(canonical_hybrid_new_york_ny_us);
+CREATE (job_job_007)-[:HAS_RAW_LOCATION]->(raw_San_Francisco__California);
+CREATE (job_job_007)-[:HAS_CANONICAL_LOCATION]->(canonical_san_francisco_ca);
+CREATE (job_job_008)-[:HAS_RAW_LOCATION]->(raw_San_Francisco__CA);
+CREATE (job_job_008)-[:HAS_CANONICAL_LOCATION]->(canonical_san_francisco_ca);
+CREATE (job_job_009)-[:HAS_RAW_LOCATION]->(raw_Seattle__Washington);
+CREATE (job_job_009)-[:HAS_CANONICAL_LOCATION]->(canonical_seattle_wa);
+CREATE (job_job_010)-[:HAS_RAW_LOCATION]->(raw_Seattle__WA);
+CREATE (job_job_010)-[:HAS_CANONICAL_LOCATION]->(canonical_seattle_wa);
+CREATE (raw_New_York__NY)-[:NORMALIZES_TO]->(canonical_new_york_ny);
+CREATE (raw_New_York___NY)-[:NORMALIZES_TO]->(canonical_new_york_ny);
+CREATE (raw_Hybrid__New_York__New_York__US_)-[:NORMALIZES_TO]->(canonical_hybrid_new_york_ny_us);
+CREATE (raw_Hybrid__New_York__NY__US_)-[:NORMALIZES_TO]->(canonical_hybrid_new_york_ny_us);
+CREATE (raw_San_Francisco__California)-[:NORMALIZES_TO]->(canonical_san_francisco_ca);
+CREATE (raw_San_Francisco__CA)-[:NORMALIZES_TO]->(canonical_san_francisco_ca);
+CREATE (raw_Seattle__Washington)-[:NORMALIZES_TO]->(canonical_seattle_wa);
+CREATE (raw_Seattle__WA)-[:NORMALIZES_TO]->(canonical_seattle_wa);
+
+// Example query: MATCH p=(:RawLocation)-[:NORMALIZES_TO]->(:CanonicalLocation) RETURN p;

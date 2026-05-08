@@ -6,32 +6,38 @@ async function goToScene(page: import('@playwright/test').Page, sceneNumber: num
 }
 
 test('before scene shows duplicate and inconsistent raw labels', async ({ page }) => {
-  await goToScene(page, 3);
+  await goToScene(page, 4);
 
   const before = page.getByTestId('public-ui-before');
   await expect(before.getByText('New York , NY')).toBeVisible();
   await expect(before.getByText('New York, NY', { exact: true })).toBeVisible();
   await expect(before.getByText('Hybrid (New York, New York, US)')).toBeVisible();
   await expect(before.getByText('Hybrid (New York, NY, US)')).toBeVisible();
+  await expect(page.getByTestId('before-match-proof')).toContainText('leaves 1 stranded option');
 });
 
-test('after scene contains no duplicate visible location labels', async ({ page }) => {
-  await goToScene(page, 5);
+test('after scene contains canonical deduplicated labels', async ({ page }) => {
+  await goToScene(page, 6);
 
   const labels = await page
     .getByTestId('public-ui-after')
     .locator('[data-location-label]')
-    .evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim()).filter(Boolean));
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-location-label')).filter(Boolean));
 
-  expect(labels).toHaveLength(new Set(labels).size);
+  expect(labels).toEqual([
+    'New York, NY',
+    'Hybrid (New York, NY, US)',
+    'San Francisco, CA',
+    'Seattle, WA',
+  ]);
+  await expect(page.getByTestId('after-match-proof')).toContainText('Canonical match returns 4 New York jobs');
 });
 
-test('after scene shows expected canonical values', async ({ page }) => {
-  await goToScene(page, 5);
+test('graph scene shows aberrant raw label and canonical convergence', async ({ page }) => {
+  await goToScene(page, 7);
 
-  const after = page.getByTestId('public-ui-after');
-  await expect(after.getByText('New York, NY', { exact: true })).toBeVisible();
-  await expect(after.getByText('San Francisco, CA', { exact: true })).toBeVisible();
-  await expect(after.getByText('Seattle, WA', { exact: true })).toBeVisible();
-  await expect(after.getByText('Hybrid (New York, NY, US)', { exact: true })).toBeVisible();
+  const graph = page.getByTestId('graph-panel');
+  await expect(graph.getByText('New York , NY')).toBeVisible();
+  await expect(page.getByTestId('aberrant-raw-node')).toContainText('raw node: 1 job(s)');
+  await expect(page.getByTestId('canonical-new-york-node')).toContainText('canonical node: 4 job(s)');
 });

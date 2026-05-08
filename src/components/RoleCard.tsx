@@ -1,10 +1,11 @@
-import type { DemoRole } from '../lib/sampleData.js';
+import { normalizeLocation, type JobAdFixture } from '../lib/location/index.js';
 
 interface RoleCardProps {
-  role: DemoRole;
+  role: JobAdFixture;
+  mode: 'before' | 'after';
 }
 
-export function RoleCard({ role }: RoleCardProps) {
+export function RoleCard({ role, mode }: RoleCardProps) {
   return (
     <article className="role-card">
       <div>
@@ -17,8 +18,8 @@ export function RoleCard({ role }: RoleCardProps) {
           <dd>{role.team}</dd>
         </div>
         <div>
-          <dt>Location</dt>
-          <dd>{role.location}</dd>
+          <dt>{mode === 'after' ? 'Canonical location' : 'Raw location'}</dt>
+          <dd>{mode === 'after' ? normalizeLocation(role.rawLocation) : role.rawLocation}</dd>
         </div>
         <div>
           <dt>Work mode</dt>

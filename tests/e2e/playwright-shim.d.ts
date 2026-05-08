@@ -26,6 +26,8 @@ declare module '@playwright/test' {
   export function expect(actual: unknown): {
     toBeVisible(): Promise<void>;
     toHaveLength(length: number): void;
+    toContainText(text: string): Promise<void>;
+    toEqual(expected: unknown): void;
   };
   export const devices: Record<string, unknown>;
   export function defineConfig(config: unknown): unknown;

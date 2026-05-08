@@ -1,30 +1,28 @@
-# Demo postmortem: duplicate location filter options
+# Synthetic postmortem: fragmented locality filters
 
-This anonymized note describes the synthetic defect demonstrated by the frontend walkthrough. It is intentionally generic and does not reference any real employer, domain, listing, or production system.
+This is a generic postmortem for the synthetic demo in this repository. It does not describe a real employer, ATS vendor, domain, API, screenshot, or job listing.
 
 ## Summary
 
-A careers-style page renders a location filter from raw freeform location labels. Equivalent locations can appear multiple times when the strings differ by whitespace, comma spacing, or full state name versus postal abbreviation.
+A careers-style page renders locality filter options from raw ATS-style strings. Equivalent places can appear as separate options when raw values differ by comma spacing, repeated whitespace, or full state name versus state abbreviation. In the fixture, `New York , NY` appears as a one-job raw node beside a larger `New York, NY` cluster.
 
 ## Impact
 
-The user-facing issue is small but visible: candidates may see duplicate location options and may not know which option contains the roles they expect. It is a high fix-to-impact polish issue because deterministic normalization can remove ambiguity before rendering.
+The defect is visually small but publicly noticeable. Candidates may see duplicate location choices, and raw-string filtering can fragment results so that one equivalent job appears under a different option.
 
-## Most plausible contributing factor
+## Contributing factors
 
-The behavior is most consistent with a display layer building options directly from raw location strings rather than a canonical display-label contract. In this synthetic demo, the payload is deliberately raw so the frontend normalization point is easy to see.
+- The public UI treats raw display labels as identity.
+- The boundary contract does not provide a canonical locality key.
+- Human-entered, customer-configured, migrated, pasted, or integrated values are assumed to be perfectly formatted.
 
 ## Corrective action
 
-Normalize labels before rendering the dropdown:
+- Normalize display labels before rendering.
+- Generate canonical keys for deduplication and matching.
+- Preserve raw input for audit and graph-based review.
+- Add deterministic tests for normalization, deduplication, canonical-key filtering, graph model generation, and Cypher generation.
 
-- trim whitespace;
-- collapse repeated spaces;
-- normalize comma spacing;
-- abbreviate supported state names in region position;
-- preserve wrappers such as `Hybrid (...)`;
-- deduplicate while preserving first-seen order.
+## Prevention
 
-## Regression guard
-
-Unit tests verify the deterministic utility. Browser tests verify that the before scene shows the duplicate class and the after scene shows unique canonical labels.
+The better boundary design is to emit both raw values and canonical fields: raw value for audit/debugging, normalized label for display, and canonical key for identity. AI can help brainstorm edge cases and review anomalies, but deterministic tests remain the source of truth.

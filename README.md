@@ -1,78 +1,69 @@
-# Demo Careers location normalization walkthrough
+# Oh no, a comma: locality normalization case study
 
-This repository is a small forensic, educational frontend demo about a visible public UI inconsistency: equivalent job locations can render differently when backend-entered location strings are formatted differently. The mocked careers page intentionally starts with labels such as `New York , NY`, `New York, NY`, `Hybrid (New York, New York, US)`, and `Hybrid (New York, NY, US)` to show how a minor data-quality issue can become a noticeable public filter defect.
+This repository is a small, anonymized Vite + React + TypeScript case study about a public ATS-style careers UI inconsistency. A platform-engineering-focused reviewer notices that equivalent locality labels can render as separate filter options, for example `New York , NY` beside `New York, NY`.
 
-The story is more important than the stack. The app walks through the issue as an investigation: raw location data enters a backend-like source, an API returns those raw strings, the public UI renders duplicate or inconsistent options, a deterministic frontend normalization layer is added, and automated checks protect the corrected behavior.
+The issue is not the comma itself. The issue is that human-entered or customer-configured ATS-style data can be fallible, inconsistent, migrated, pasted, integrated, or otherwise unanticipated. Public UI code should not require humans to be perfect before rendering correctly.
 
-Use this repo to demonstrate troubleshooting mindset, attention to UI detail, release validation, and frontend normalization of inconsistent source data. It is intentionally anonymized and uses mock data only; it is not intended to identify, reproduce, or criticize any specific company or employer.
+Everything in this repository is synthetic. It contains no real company names, ATS vendors, domains, email addresses, logos, screenshots, scraped data, or real job listings.
 
-## Anonymization note
+## What the demo shows
 
-This repository uses synthetic data only. It includes no real company names, logos, domains, email addresses, screenshots, job listings, scraped content, or identifiable employer data. The generic brand used by the app is **Demo Careers**.
+The walkthrough in `src/components/GuidedWalkthrough.tsx` tells an eight-scene story:
 
-## What the demo demonstrates
+1. notice the subtle public UI signal;
+2. model likely fallible ATS-style input with synthetic job ads;
+3. inspect the raw API/payload boundary;
+4. show before-fix public locality rendering with duplicate or near-duplicate options;
+5. implement deterministic normalization, canonical keys, deduplication, and matching;
+6. show after-fix public locality rendering and canonical-key filtering;
+7. render a lightweight Neo4j-style graph that makes one-off raw aberrations visible;
+8. explain deterministic regression tests and optional AI-assisted review guidance.
 
-The guided walkthrough moves through six scenes:
+## Synthetic fixture examples
 
-1. **Source data enters the backend** — a mock admin table contains inconsistent raw location inputs.
-2. **API returns raw location values** — a synthetic JSON payload returns those raw strings.
-3. **Before fix: public UI renders duplicates** — the location dropdown displays raw duplicate and inconsistent labels.
-4. **Code change: normalize before rendering** — a focused snippet highlights the normalizer and option builder.
-5. **After fix: public UI renders canonical options** — the same UI component receives normalized, deduplicated labels.
-6. **Regression tests** — a test-results panel lists unit and browser checks that protect the behavior.
+The fixture intentionally includes raw values such as:
 
-The walkthrough autoplays by default and includes **Pause**, **Previous**, **Next**, **Restart**, and clickable timeline controls.
-
-## Guided Demo
-
-Run the demo when you want to narrate the issue from symptom to fix:
-
-```bash
-npm install
-npm run dev
+```text
+New York , NY
+New York, NY
+Hybrid (New York, New York, US)
+Hybrid (New York, NY, US)
+San Francisco, California
+San Francisco, CA
+Seattle, Washington
+Seattle, WA
 ```
 
-Then open the local URL printed by Vite.
+The raw `New York , NY` value is associated with one synthetic job ad, while `New York, NY` has several. The after-fix UI normalizes both to the same canonical `New York, NY` option and filtering by that canonical key returns all matching New York jobs.
 
-Suggested walkthrough script:
+## Deterministic location domain module
 
-1. Start on **Source data** and point out that the rows are semantically equivalent but formatted inconsistently.
-2. Move to **API payload** and note that the frontend receives raw strings rather than canonical display labels.
-3. Pause on **Before UI** and inspect the location dropdown: duplicated options and spacing/state-name variants are visible to users.
-4. Continue to **Code change** and explain that the fix is intentionally small, deterministic, and frontend-focused.
-5. Review **After UI** and confirm the public dropdown now shows one stable label per location variant.
-6. End on **Tests** to connect the fix to release validation: unit coverage checks normalization rules, while browser checks verify the rendered UI.
+The single source of truth lives under `src/lib/location/`:
 
-Interpret the demo as a data-quality and validation lesson, not as a backend blame exercise. The frontend cannot fix every upstream data issue, but it can make equivalent display values consistent, remove duplicate filter options, and add automated checks that catch regressions before release.
+```text
+src/lib/location/types.ts                 Shared fixture, option, and graph types
+src/lib/location/fixtures.ts              Synthetic job ads and mocked ATS payload
+src/lib/location/normalizeLocation.ts     Display-label normalization
+src/lib/location/canonicalLocationKey.ts  Stable keys for dedupe and matching
+src/lib/location/buildLocationOptions.ts  Raw/canonical options and filtering
+src/lib/location/graphModel.ts            Neo4j-style graph data and Cypher generation
+```
 
-## Synthetic sample data
+The normalizer trims leading/trailing whitespace, collapses repeated whitespace, normalizes comma spacing, converts supported state names in the region slot to abbreviations, and preserves wrappers such as `Hybrid (...)` while normalizing the inner locality.
 
-Raw location fixture values:
+## Neo4j-style graph demo
 
-- `Hybrid (New York, New York, US)`
-- `Hybrid (New York, NY, US)`
-- `New York , NY`
-- `New York, NY`
-- `Hybrid (San Francisco, California, US)`
-- `Hybrid (San Francisco, CA, US)`
-- `Hybrid (Seattle, Washington, US)`
-- `Hybrid (Seattle, WA, US)`
-- `San Francisco, CA`
-- `Seattle, WA`
+No Neo4j instance is required for tests or runtime. The React demo uses a lightweight SVG/HTML graph panel, and the deterministic generator writes a Cypher file for optional manual exploration:
 
-Sample roles are placeholders: Role 001 on Team A, Role 002 on Team B, and Role 003 on Team C.
+```bash
+npm run graph:cypher
+```
 
-## Normalization logic
+The generated artifact is `demo-artifacts/neo4j-location-graph.cypher`. See `docs/neo4j-demo.md` for Neo4j Browser and `cypher-shell` instructions.
 
-The framework-agnostic utility in `src/lib/normalizeLocation.ts`:
+## AI usage policy
 
-- Trims leading and trailing whitespace.
-- Collapses repeated internal whitespace.
-- Normalizes spacing around commas.
-- Converts supported full state names in region position to abbreviations: New York → NY, California → CA, Washington → WA.
-- Preserves wrappers such as `Hybrid (...)` while normalizing the inner location text.
-
-`src/lib/normalizeLocationOptions.ts` maps raw labels through the normalizer, deduplicates display values, and preserves first-seen order so option order stays stable.
+Generative AI is documented as assistive only: edge-case brainstorming, test-design review, diff review, and post-deployment anomaly review. It is not required at runtime, in tests, in CI, or for deterministic validation. See `docs/ai-usage.md`.
 
 ## Run locally
 
@@ -83,53 +74,27 @@ npm run dev
 
 Then open the local URL printed by Vite.
 
-## Production build
+## Required checks
 
 ```bash
-npm run build
-```
-
-## Tests
-
-```bash
-npm run test
 npm run typecheck
+npm run test
+npm run validate
+npm run build
+npm run graph:cypher
 npm run e2e
-```
-
-The Vitest suite covers trimming, comma cleanup, full-state abbreviation, wrapper preservation, deduplication, first-seen order preservation, and the observed duplicate-collapse examples from the synthetic fixture.
-
-The Playwright suite loads the walkthrough, navigates to the before and after scenes, confirms duplicate raw labels are visible before normalization, confirms the after-scene labels are unique, and confirms expected canonical labels are visible.
-
-## Demo artifacts
-
-Generate one screenshot per scene:
-
-```bash
 npm run demo:screenshots
 ```
 
-Screenshots are written to `demo-artifacts/`:
-
-- `01-source-data.png`
-- `02-api-payload-before.png`
-- `03-public-ui-before.png`
-- `04-code-change.png`
-- `05-public-ui-after.png`
-- `06-regression-tests.png`
-
-Optional video recording uses Playwright's video-enabled project:
-
-```bash
-npm run demo:record
-```
+`npm run validate` runs deterministic validation only. Browser commands require Playwright browsers to be installed in the execution environment.
 
 ## Project structure
 
 ```text
-src/lib/                         Framework-agnostic sample data and normalization utilities
-src/components/                  Reusable walkthrough, scene, dropdown, and role-card components
-tests/normalizeLocationOptions.test.ts  Unit coverage for normalization behavior
-tests/e2e/                       Playwright browser and screenshot tests
-demo-artifacts/                  Generated screenshot output directory
+src/lib/location/     Framework-agnostic location domain utilities and fixtures
+src/components/       Reusable React walkthrough scenes and UI components
+scripts/              Deterministic artifact generators
+docs/                 AI and Neo4j demo notes
+tests/                Vitest and Playwright regression coverage
+demo-artifacts/       Generated screenshots and Cypher output
 ```

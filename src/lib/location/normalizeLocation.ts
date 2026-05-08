@@ -4,7 +4,7 @@ const STATE_ABBREVIATIONS: Record<string, string> = {
   washington: 'WA',
 };
 
-const WRAPPED_LOCATION_PATTERN = /^(?<prefix>[^()]+\()(?<inner>.*)(?<suffix>\))$/;
+const WRAPPED_LOCATION_PATTERN = /^(?<prefix>[^()]+)\((?<inner>.*)\)$/;
 
 function normalizeWhitespaceAndCommas(value: string): string {
   return value
@@ -22,14 +22,15 @@ function normalizeStateToken(value: string): string {
 }
 
 function normalizeCommaDelimitedLocation(value: string): string {
-  const parts = normalizeWhitespaceAndCommas(value).split(',').map((part) => part.trim());
+  const normalized = normalizeWhitespaceAndCommas(value);
+  const parts = normalized.split(',').map((part) => part.trim());
 
   if (parts.length < 2) {
-    return normalizeWhitespaceAndCommas(value);
+    return normalized;
   }
 
-  const [city, region, ...rest] = parts;
-  return [city, normalizeStateToken(region), ...rest].join(', ');
+  const [locality, region, ...rest] = parts;
+  return [locality, normalizeStateToken(region), ...rest].join(', ');
 }
 
 export function normalizeLocation(value: string): string {
@@ -40,7 +41,7 @@ export function normalizeLocation(value: string): string {
     return normalizeCommaDelimitedLocation(normalized);
   }
 
-  const prefix = normalizeWhitespaceAndCommas(wrapped.groups.prefix).replace(/\s*\($/, ' (');
+  const prefix = normalizeWhitespaceAndCommas(wrapped.groups.prefix).replace(/\s*$/, ' ');
   const inner = normalizeCommaDelimitedLocation(wrapped.groups.inner);
-  return `${prefix}${inner}${wrapped.groups.suffix}`;
+  return `${prefix}(${inner})`;
 }

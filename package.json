@@ -9,10 +9,11 @@
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "validate": "vitest run tests/normalizeLocationOptions.test.ts",
+    "validate": "npm run typecheck && npm run test && npm run graph:cypher",
     "e2e": "playwright test",
     "demo:screenshots": "playwright test tests/e2e/screenshots.spec.ts",
-    "demo:record": "playwright test tests/e2e/screenshots.spec.ts --project=chromium-video"
+    "demo:record": "playwright test tests/e2e/screenshots.spec.ts --project=chromium-video",
+    "graph:cypher": "tsx scripts/generateNeo4jCypher.ts"
   },
   "keywords": [
     "frontend",

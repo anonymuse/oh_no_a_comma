@@ -1,23 +1,38 @@
-import { demoRoles } from '../lib/sampleData.js';
+import {
+  buildCanonicalLocationOptions,
+  buildRawLocationOptions,
+  canonicalLocationKey,
+  filterJobsByCanonicalLocation,
+  jobAdFixtures,
+} from '../lib/location/index.js';
 import { LocationDropdown } from './LocationDropdown.js';
 import { RoleCard } from './RoleCard.js';
 import { SceneFrame } from './SceneFrame.js';
 
 interface PublicUiSceneProps {
   mode: 'before' | 'after';
-  locationOptions: readonly string[];
 }
 
-export function PublicUiScene({ mode, locationOptions }: PublicUiSceneProps) {
+export function PublicUiScene({ mode }: PublicUiSceneProps) {
   const isAfter = mode === 'after';
+  const rawOptions = buildRawLocationOptions(jobAdFixtures).map((option) => ({ label: option.value, count: option.jobCount }));
+  const canonicalOptions = buildCanonicalLocationOptions(jobAdFixtures).map((option) => ({
+    label: option.label,
+    count: option.jobCount,
+    rawValues: option.rawValues,
+  }));
+  const selectedKey = canonicalLocationKey('New York, NY');
+  const visibleJobs = isAfter
+    ? filterJobsByCanonicalLocation(jobAdFixtures, selectedKey)
+    : jobAdFixtures.filter((job) => job.rawLocation === 'New York, NY');
 
   return (
     <SceneFrame
-      eyebrow={isAfter ? 'Scene 05' : 'Scene 03'}
-      title={isAfter ? 'After fix: public UI renders canonical options' : 'Before fix: public UI renders duplicates'}
+      eyebrow={isAfter ? 'Scene 06' : 'Scene 04'}
+      title={isAfter ? 'After fix: canonical options and matching' : 'Before fix: raw options fragment the UI'}
       summary={isAfter
-        ? 'The same reusable public UI now receives normalized, deduplicated labels.'
-        : 'Rendering the raw payload directly exposes duplicate and inconsistent location labels.'}
+        ? 'Options are deduplicated by canonical key, and filtering by `New York, NY` also includes the one-off `New York , NY` job.'
+        : 'The dropdown exposes near-duplicates, and selecting the canonical-looking raw string misses the one aberrant job.'}
     >
       <div className="careers-page" data-testid={isAfter ? 'public-ui-after' : 'public-ui-before'}>
         <header className="careers-header">
@@ -25,15 +40,18 @@ export function PublicUiScene({ mode, locationOptions }: PublicUiSceneProps) {
           <div>
             <p className="brand-name">Demo Careers</p>
             <h3>Open roles</h3>
-            <p className="demo-notice">Demo notice: this page uses anonymized sample data for UI testing.</p>
+            <p className="demo-notice">Synthetic data only. Selected demo filter: New York, NY.</p>
           </div>
         </header>
+        <div className="filter-proof" data-testid={isAfter ? 'after-match-proof' : 'before-match-proof'}>
+          {isAfter ? 'Canonical match returns 4 New York jobs from 2 raw labels.' : 'Raw-string match returns 3 New York jobs and leaves 1 stranded option.'}
+        </div>
         <div className="careers-layout">
           <aside>
-            <LocationDropdown label="Location" options={locationOptions} />
+            <LocationDropdown label="Location" options={isAfter ? canonicalOptions : rawOptions} selected="New York, NY" />
           </aside>
           <main className="role-list">
-            {demoRoles.map((role) => <RoleCard key={role.id} role={role} />)}
+            {visibleJobs.map((role) => <RoleCard key={role.id} role={role} mode={mode} />)}
           </main>
         </div>
       </div>
