@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+demo-artifacts/*.png
+demo-artifacts/**/*.webm
 .DS_Store
 *.tsbuildinfo
 .env
