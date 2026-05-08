@@ -1,6 +1,10 @@
 # Demo Careers location normalization walkthrough
 
-A small Vite + React + TypeScript frontend demo that plays like a short recorded screen-share. It shows a common data-quality UI failure mode: a location filter receives equivalent freeform location strings, renders duplicate options, and then improves after deterministic normalization is applied before display.
+This repository is a small forensic, educational frontend demo about a visible public UI inconsistency: equivalent job locations can render differently when backend-entered location strings are formatted differently. The mocked careers page intentionally starts with labels such as `New York , NY`, `New York, NY`, `Hybrid (New York, New York, US)`, and `Hybrid (New York, NY, US)` to show how a minor data-quality issue can become a noticeable public filter defect.
+
+The story is more important than the stack. The app walks through the issue as an investigation: raw location data enters a backend-like source, an API returns those raw strings, the public UI renders duplicate or inconsistent options, a deterministic frontend normalization layer is added, and automated checks protect the corrected behavior.
+
+Use this repo to demonstrate troubleshooting mindset, attention to UI detail, release validation, and frontend normalization of inconsistent source data. It is intentionally anonymized and uses mock data only; it is not intended to identify, reproduce, or criticize any specific company or employer.
 
 ## Anonymization note
 
@@ -18,6 +22,28 @@ The guided walkthrough moves through six scenes:
 6. **Regression tests** — a test-results panel lists unit and browser checks that protect the behavior.
 
 The walkthrough autoplays by default and includes **Pause**, **Previous**, **Next**, **Restart**, and clickable timeline controls.
+
+## Guided Demo
+
+Run the demo when you want to narrate the issue from symptom to fix:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the local URL printed by Vite.
+
+Suggested walkthrough script:
+
+1. Start on **Source data** and point out that the rows are semantically equivalent but formatted inconsistently.
+2. Move to **API payload** and note that the frontend receives raw strings rather than canonical display labels.
+3. Pause on **Before UI** and inspect the location dropdown: duplicated options and spacing/state-name variants are visible to users.
+4. Continue to **Code change** and explain that the fix is intentionally small, deterministic, and frontend-focused.
+5. Review **After UI** and confirm the public dropdown now shows one stable label per location variant.
+6. End on **Tests** to connect the fix to release validation: unit coverage checks normalization rules, while browser checks verify the rendered UI.
+
+Interpret the demo as a data-quality and validation lesson, not as a backend blame exercise. The frontend cannot fix every upstream data issue, but it can make equivalent display values consistent, remove duplicate filter options, and add automated checks that catch regressions before release.
 
 ## Synthetic sample data
 
