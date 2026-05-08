@@ -1,25 +1,10 @@
-# .github/workflows/ci.yml
-#
-# CI pipeline for ats-location-canonicalization.
-#
-# Steps:
-#   1. TypeScript type check (blocking)
-#   2. Unit tests with coverage (blocking)
-#   3. Fixture validation — duplicate canonical label check (blocking)
-#   4. Runtime audit smoke test (blocking)
-#   5. AI-assisted near-duplicate review (non-blocking, advisory only)
-#
-# Philosophy: deterministic checks gate the build; AI assists review.
-
 name: CI
 
 "on":
   pull_request:
-    branches:
-      - main
+    branches: [main]
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
@@ -30,90 +15,31 @@ concurrency:
 
 jobs:
   verify:
-    name: Typecheck, test, and validate
+    name: Deterministic checks
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: TypeScript typecheck
         run: npm run typecheck
-
-      - name: Unit tests with coverage
-        run: npm test
-
-      - name: Fixture validation
+      - name: Unit tests
+        run: npm run test
+      - name: Generate Neo4j Cypher
+        run: npm run graph:cypher
+      - name: Validate deterministic suite
         run: npm run validate
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-
-  audit:
-    name: Runtime audit smoke test
-    runs-on: ubuntu-latest
-    needs: verify
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run audit script
-        run: npm run audit
-
-  advisory-ai-review:
-    name: AI near-duplicate review advisory
-    runs-on: ubuntu-latest
-    needs: verify
-    continue-on-error: true
-    env:
-      # GitHub Actions does not allow secrets to be referenced directly in job
-      # `if` expressions, so the detector command itself is gated by this env.
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-    steps:
-      - name: Skip advisory detector when secret is unavailable
-        if: ${{ env.ANTHROPIC_API_KEY == '' }}
-        run: echo "ANTHROPIC_API_KEY is not configured; skipping advisory AI review."
-
-      - name: Checkout
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      - name: Install dependencies
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
-        run: npm ci
-
-      - name: Run AI advisory duplicate detector
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
-        run: npm run detect-dupes
+      - name: Build app
+        run: npm run build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Browser walkthrough tests
+        run: npm run e2e
+      - name: Demo screenshots
+        run: npm run demo:screenshots

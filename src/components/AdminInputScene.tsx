@@ -1,32 +1,38 @@
-import { rawLocations } from '../lib/sampleData.js';
+import { jobAdFixtures } from '../lib/location/index.js';
 import { SceneFrame } from './SceneFrame.js';
+
+function statusFor(rawLocation: string): string {
+  if (rawLocation === 'New York , NY') return 'One-off comma-spacing aberration';
+  if (/New York|California|Washington/.test(rawLocation.split(',')[1] ?? '')) return 'Full state name in region slot';
+  return 'Canonical-looking raw input';
+}
 
 export function AdminInputScene() {
   return (
     <SceneFrame
-      eyebrow="Scene 01"
-      title="Source data enters the backend"
-      summary="A mock admin table shows how equivalent places can be entered with slightly different strings."
+      eyebrow="Scene 02"
+      title="Fallible ATS-style input is modeled"
+      summary="The fixture is intentionally synthetic and shows plausible customer-configured or human-entered variants without naming any real system."
     >
       <div className="admin-table-card">
         <div className="table-toolbar">
-          <strong>Mock backend input</strong>
-          <span>Synthetic fixture</span>
+          <strong>Mock job-ad fixture</strong>
+          <span>Synthetic only</span>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Row</th>
+              <th>Job</th>
               <th>Raw location input</th>
-              <th>Status</th>
+              <th>Demo signal</th>
             </tr>
           </thead>
           <tbody>
-            {rawLocations.map((location, index) => (
-              <tr key={`${location}-${index}`}>
-                <td>{String(index + 1).padStart(3, '0')}</td>
-                <td><code>{location}</code></td>
-                <td>{location.includes(' ,') || /New York|California|Washington/.test(location.split(',')[1] ?? '') ? 'Needs normalization' : 'Canonical-looking'}</td>
+            {jobAdFixtures.map((job) => (
+              <tr key={job.id}>
+                <td>{job.id}</td>
+                <td><code>{job.rawLocation}</code></td>
+                <td>{statusFor(job.rawLocation)}</td>
               </tr>
             ))}
           </tbody>

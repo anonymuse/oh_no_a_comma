@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { normalizeLocationOptions } from '../lib/normalizeLocationOptions.js';
-import { rawLocations } from '../lib/sampleData.js';
 import { AdminInputScene } from './AdminInputScene.js';
 import { ApiPayloadScene } from './ApiPayloadScene.js';
 import { CodeDiffScene } from './CodeDiffScene.js';
+import { GraphDemoScene } from './GraphDemoScene.js';
+import { ObservedSignalScene } from './ObservedSignalScene.js';
 import { ProgressTimeline } from './ProgressTimeline.js';
 import { PublicUiScene } from './PublicUiScene.js';
 import { TestResultsScene } from './TestResultsScene.js';
@@ -19,16 +19,17 @@ const SCENE_DURATION_MS = 4200;
 export function GuidedWalkthrough() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const normalizedOptions = useMemo(() => normalizeLocationOptions(rawLocations), []);
 
   const scenes: SceneDefinition[] = useMemo(() => [
-    { id: 'source-data', shortTitle: 'Source data', render: () => <AdminInputScene /> },
-    { id: 'api-payload', shortTitle: 'API payload', render: () => <ApiPayloadScene /> },
-    { id: 'public-before', shortTitle: 'Before UI', render: () => <PublicUiScene mode="before" locationOptions={rawLocations} /> },
-    { id: 'code-change', shortTitle: 'Code change', render: () => <CodeDiffScene /> },
-    { id: 'public-after', shortTitle: 'After UI', render: () => <PublicUiScene mode="after" locationOptions={normalizedOptions} /> },
-    { id: 'regression-tests', shortTitle: 'Tests', render: () => <TestResultsScene /> },
-  ], [normalizedOptions]);
+    { id: 'signal', shortTitle: 'Signal', render: () => <ObservedSignalScene /> },
+    { id: 'source-data', shortTitle: 'Input', render: () => <AdminInputScene /> },
+    { id: 'api-payload', shortTitle: 'Boundary', render: () => <ApiPayloadScene /> },
+    { id: 'public-before', shortTitle: 'Before UI', render: () => <PublicUiScene mode="before" /> },
+    { id: 'code-change', shortTitle: 'Fix', render: () => <CodeDiffScene /> },
+    { id: 'public-after', shortTitle: 'After UI', render: () => <PublicUiScene mode="after" /> },
+    { id: 'graph-demo', shortTitle: 'Graph', render: () => <GraphDemoScene /> },
+    { id: 'regression-tests', shortTitle: 'Tests + AI', render: () => <TestResultsScene /> },
+  ], []);
 
   useEffect(() => {
     if (!isPlaying) return undefined;
@@ -62,11 +63,11 @@ export function GuidedWalkthrough() {
     <div className="walkthrough-shell">
       <header className="hero">
         <div>
-          <p className="eyebrow">Guided frontend demo</p>
-          <h1>Demo Careers location filter walkthrough</h1>
+          <p className="eyebrow">README-driven frontend case study</p>
+          <h1>Public locality rendering should not require perfect raw data</h1>
           <p>
-            A hands-off, anonymized screen-share style demo showing how raw location strings
-            create duplicate filters and how deterministic normalization fixes the UI.
+            An anonymized, synthetic walkthrough of a tiny careers-filter inconsistency,
+            the deterministic boundary fix, and a graph view that makes one-off aberrations visible.
           </p>
         </div>
         <div className="hero-card">
