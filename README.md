@@ -1,221 +1,109 @@
-# ATS Location Canonicalization — Case Study
+# Demo Careers location normalization walkthrough
 
-A portfolio case study on identifying, reproducing, and preventing a class of
-data-normalization defect visible in a public careers experience.
+A small Vite + React + TypeScript frontend demo that plays like a short recorded screen-share. It shows a common data-quality UI failure mode: a location filter receives equivalent freeform location strings, renders duplicate options, and then improves after deterministic normalization is applied before display.
 
-This project is based on a limited public observation: a careers UI appears to
-render semantically equivalent location values with slightly different
-formatting — `New York , NY` and `New York, NY`, and similar variants for
-hybrid roles. The goal is not to assert a confirmed production root cause. The
-goal is to show how a platform engineering team could investigate the signal,
-reproduce the failure class, apply a defensive fix, and prevent recurrence
-through validation and release controls.
+## Anonymization note
 
-> **Disclosure**: This project is not affiliated with Rippling or any ATS
-> provider. It does not inspect private systems, bypass authentication, or make
-> claims about non-public backend implementation. All observations are from
-> public browser inspection. All test data is synthetic.
+This repository uses synthetic data only. It includes no real company names, logos, domains, email addresses, screenshots, job listings, scraped content, or identifiable employer data. The generic brand used by the app is **Demo Careers**.
 
----
+## What the demo demonstrates
 
-## Positioning for reviewers
+The guided walkthrough moves through six scenes:
 
-This is not a claim that a particular company has a meaningful production
-defect. It is a demonstration of engineering posture:
+1. **Source data enters the backend** — a mock admin table contains inconsistent raw location inputs.
+2. **API returns raw location values** — a synthetic JSON payload returns those raw strings.
+3. **Before fix: public UI renders duplicates** — the location dropdown displays raw duplicate and inconsistent labels.
+4. **Code change: normalize before rendering** — a focused snippet highlights the normalizer and option builder.
+5. **After fix: public UI renders canonical options** — the same UI component receives normalized, deduplicated labels.
+6. **Regression tests** — a test-results panel lists unit and browser checks that protect the behavior.
 
-- notice small inconsistencies that most people scroll past;
-- infer likely system boundaries without overclaiming from incomplete evidence;
-- turn ambiguous observations into testable synthetic fixtures;
-- fix the failure *class*, not just the visible string;
-- use automation to prevent recurrence at the release boundary;
-- apply GenAI as an assistive review layer, not a source of truth.
+The walkthrough autoplays by default and includes **Pause**, **Previous**, **Next**, **Restart**, and clickable timeline controls.
 
-That is the core platform-engineering lesson. The comma is the prompt, not the
-point.
+## Synthetic sample data
 
----
+Raw location fixture values:
 
-## Executive summary
+- `Hybrid (New York, New York, US)`
+- `Hybrid (New York, NY, US)`
+- `New York , NY`
+- `New York, NY`
+- `Hybrid (San Francisco, California, US)`
+- `Hybrid (San Francisco, CA, US)`
+- `Hybrid (Seattle, Washington, US)`
+- `Hybrid (Seattle, WA, US)`
+- `San Francisco, CA`
+- `Seattle, WA`
 
-A public careers page can expose subtle data-contract issues when location
-labels are generated from inconsistent source data. The visible symptom here is
-small formatting drift in location filter options: extra whitespace before a
-comma, different state representations, and duplicate-looking hybrid labels.
+Sample roles are placeholders: Role 001 on Team A, Role 002 on Team B, and Role 003 on Team C.
 
-The proposed engineering response treats this as a canonicalization-boundary
-problem:
+## Normalization logic
 
-1. Observe the visible inconsistency using public page data and screenshots.
-2. Reconstruct plausible ATS payload variants that could produce the rendering
-   difference.
-3. Model both likely data shapes: preformatted strings and structured fields.
-4. Write failing regression tests that demonstrate duplicate or non-canonical
-   labels.
-5. Add deterministic normalization for location display labels.
-6. Deduplicate filter options by canonical key, not raw display string.
-7. Add CI validation so future fixture or payload changes surface before
-   release.
-8. Use GenAI as an assistive anomaly detector in non-blocking review mode.
+The framework-agnostic utility in `src/lib/normalizeLocation.ts`:
 
----
+- Trims leading and trailing whitespace.
+- Collapses repeated internal whitespace.
+- Normalizes spacing around commas.
+- Converts supported full state names in region position to abbreviations: New York → NY, California → CA, Washington → WA.
+- Preserves wrappers such as `Hybrid (...)` while normalizing the inner location text.
 
-## Observed symptom
+`src/lib/normalizeLocationOptions.ts` maps raw labels through the normalizer, deduplicates display values, and preserves first-seen order so option order stays stable.
 
-On the public careers page, the location filter dropdown contains entries
-that appear to represent the same city under multiple spellings:
-
-```
-New York , NY                        ← space before comma
-New York, NY                         ← standard format
-Hybrid (New York, New York, US)      ← full state name
-Hybrid (New York, NY, US)            ← abbreviated state
-Hybrid (Seattle, Washington, US)     ← full state name
-Hybrid (Seattle, WA, US)             ← abbreviated state
-```
-
-A candidate selecting `New York , NY` likely sees a different result set than
-one selecting `New York, NY`. Whether they do depends on whether the filter
-logic also normalizes before matching — but no evidence from public inspection
-suggests it does.
-
----
-
-## Forensic hypothesis
-
-The visible behavior can be explained by one or more ordinary data-flow issues.
-None of these hypotheses requires a severe backend defect. The most plausible
-class of issue is weak canonicalization at a data boundary.
-
-| Hypothesis | Explanation | How to test with DevTools |
-|---|---|---|
-| Raw display strings from ATS records | Frontend receives already-formatted location labels and renders directly | Inspect network payloads for `location`, `location_label`, `display_name`, `workplace_location` |
-| Labels composed from structured fields | Frontend builds labels from `city`, `state`, `country`, `workplace_type` but does not trim or canonicalize components first | Compare raw structured fields against rendered dropdown text |
-| Mixed state name conventions | Some records use `NY`; others use `New York` | Search payloads for both `NY` and `New York` |
-| Deduplication uses raw labels | `New York , NY` and `New York, NY` are treated as distinct strings | Inspect dropdown option arrays or run a console probe against option text |
-| Hybrid labels assembled by a separate code path | Hybrid role labels use a different formatter than office-location labels, resulting in different region representation | Compare rendering logic or payload fields for workplace type |
-
----
-
-## Data model
-
-The repository models both likely forms of ATS location data: a preformatted
-string label and a structured record with discrete fields.
-
-```ts
-export type WorkplaceType = 'office' | 'hybrid' | 'remote';
-
-export interface AtsLocationRecord {
-  id: string;
-  workplaceType: WorkplaceType;
-  city?: string;
-  region?: string;
-  country?: string;
-  rawLabel?: string;
-}
-```
-
-Modeling both shapes matters because the correct normalization strategy differs:
-a structured record should be normalized field-by-field before label
-composition; a preformatted string needs a defensive rendering pass. A
-production fix likely needs both layers.
-
----
-
-## Fix summary
-
-**Deterministic normalization** — three passes applied in order:
-
-1. Punctuation spacing: remove whitespace before commas, normalize spacing
-   inside parentheses, collapse double spaces.
-2. Region canonicalization: normalize full US state names to 2-letter postal
-   abbreviations.
-3. Prefix casing: title-case `Hybrid`, `Remote`, `On-site` prefixes.
-
-**Deduplication by canonical key** — build the filter option list from
-normalized strings, not raw ones.
-
-**Filter matching by canonical key** — match selected filter values against
-normalized job location strings so all variants of a city resolve to the same
-result set.
-
-Example behavior:
-
-```ts
-normalizeLocation('New York , NY');
-// → 'New York, NY'
-
-normalizeLocation('Hybrid (New York, New York, US)');
-// → 'Hybrid (New York, NY, US)'
-
-normalizeLocation('hybrid ( seattle , washington , us )');
-// → 'Hybrid (Seattle, WA, US)'
-```
-
----
-
-## GenAI role
-
-GenAI is used in this project as an **assistive review layer**, not a source of
-truth. See [`docs/ai-usage.md`](./docs/ai-usage.md) for the full rationale.
-
-The `scripts/detectNearDuplicateLabels.ts` script uses Claude to group
-semantically similar location strings and flag candidates for human review. It
-runs in CI as a **non-blocking** step — it annotates the output but does not
-gate the build. Deterministic checks gate the build.
-
----
-
-## Running the project
+## Run locally
 
 ```bash
 npm install
-npm test                    # Vitest unit tests with coverage
-npm run validate            # Fixture validation — fails on duplicate canonical labels
-npm run audit               # Fetch public job data and report normalization deltas
-npm run detect-dupes        # AI-assisted near-duplicate label detector (non-blocking)
-npm run typecheck           # tsc --noEmit
+npm run dev
 ```
 
----
+Then open the local URL printed by Vite.
 
-## Repository structure
+## Production build
 
-```
-ats-location-canonicalization/
-  README.md
-  POSTMORTEM.md
-  CLAUDE.md
-  package.json
-  tsconfig.json
-  vitest.config.ts
-  .gitignore
-  src/
-    locationTypes.ts           Interface definitions and WorkplaceType enum
-    normalizeLocation.ts       Deterministic normalization utility (3 passes)
-    dedupeLocations.ts         Deduplication and filter-matching logic
-    mockAtsPayload.ts          Synthetic fixtures reproducing observed variants
-    components/
-      LocationFilter.tsx       React component + useLocationFilter hook
-  tests/
-    normalizeLocation.test.ts  Unit tests — observed bugs as first test cases
-    dedupeLocations.test.ts    Dedup and filter tests
-    fixtureValidation.test.ts  CI guard: asserts no duplicate canonical labels
-  scripts/
-    auditLocations.ts          Fetch public job data; report normalization delta
-    detectNearDuplicateLabels.ts  AI-assisted near-duplicate detector (non-blocking)
-  docs/
-    forensic-notes.md          Detailed DevTools investigation playbook
-    ai-usage.md                GenAI governance rationale for this project
-    postmortem-notes.md        Extended post-mortem working notes
-  .github/
-    workflows/
-      ci.yml                   TypeScript check + tests + fixture validation
+```bash
+npm run build
 ```
 
----
+## Tests
 
-## References
+```bash
+npm run test
+npm run typecheck
+npm run e2e
+```
 
-- Public careers page: https://www.rippling.com/careers/open-roles
-- Job page under review: https://ats.rippling.com/rippling/jobs/60dc87c6-1f47-428c-bd7c-98c9f7419653
-- Screenshots: captured manually from the public careers UI, May 2025
+The Vitest suite covers trimming, comma cleanup, full-state abbreviation, wrapper preservation, deduplication, first-seen order preservation, and the observed duplicate-collapse examples from the synthetic fixture.
+
+The Playwright suite loads the walkthrough, navigates to the before and after scenes, confirms duplicate raw labels are visible before normalization, confirms the after-scene labels are unique, and confirms expected canonical labels are visible.
+
+## Demo artifacts
+
+Generate one screenshot per scene:
+
+```bash
+npm run demo:screenshots
+```
+
+Screenshots are written to `demo-artifacts/`:
+
+- `01-source-data.png`
+- `02-api-payload-before.png`
+- `03-public-ui-before.png`
+- `04-code-change.png`
+- `05-public-ui-after.png`
+- `06-regression-tests.png`
+
+Optional video recording uses Playwright's video-enabled project:
+
+```bash
+npm run demo:record
+```
+
+## Project structure
+
+```text
+src/lib/                         Framework-agnostic sample data and normalization utilities
+src/components/                  Reusable walkthrough, scene, dropdown, and role-card components
+tests/normalizeLocationOptions.test.ts  Unit coverage for normalization behavior
+tests/e2e/                       Playwright browser and screenshot tests
+demo-artifacts/                  Generated screenshot output directory
+```

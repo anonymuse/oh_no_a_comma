@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
 
 const hasInstalledReact = existsSync(fileURLToPath(new URL('./node_modules/react', import.meta.url)));
@@ -14,15 +14,5 @@ const fallbackReactAliases = hasInstalledReact
 export default defineConfig({
   resolve: {
     alias: fallbackReactAliases,
-  },
-  test: {
-    globals: true,
-    environment: 'node',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
-      include: ['src/lib/**/*.ts'],
-    },
-    include: ['tests/**/*.test.ts'],
   },
 });
